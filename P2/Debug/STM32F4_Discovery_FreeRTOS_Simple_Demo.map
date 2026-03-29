@@ -3249,7 +3249,7 @@ LOAD c:/program files (x86)/atollic/truestudio for stm32 9.1.0/armtools/bin/../l
                 0x000008b0       0x22 c:/program files (x86)/atollic/truestudio for stm32 9.1.0/armtools/bin/../lib/gcc/arm-atollic-eabi/6.3.1/armv7e-m/softfp/crtn.o
 OUTPUT(STM32F4_Discovery_FreeRTOS_Simple_Demo.elf elf32-littlearm)
 
-.debug_info     0x00000000     0xc526
+.debug_info     0x00000000     0xc52c
  .debug_info    0x00000000      0xac3 FreeRTOS_Source\list.o
  .debug_info    0x00000ac3      0x50b FreeRTOS_Source\portable\GCC\ARM_CM4F\port.o
  .debug_info    0x00000fce      0xc03 FreeRTOS_Source\portable\MemMang\heap_4.o
@@ -3261,11 +3261,11 @@ OUTPUT(STM32F4_Discovery_FreeRTOS_Simple_Demo.elf elf32-littlearm)
  .debug_info    0x00007aa5      0xb1a Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_spi.o
  .debug_info    0x000085bf     0x108b Utilities\STM32F4-Discovery\stm32f4_discovery_audio_codec.o
  .debug_info    0x0000964a      0x12d src\STM32F4-Discovery_callback.o
- .debug_info    0x00009777     0x146e src\main.o
- .debug_info    0x0000abe5       0x6e src\startup_stm32f4xx.o
- .debug_info    0x0000ac53      0x121 src\stm32f4xx_it.o
- .debug_info    0x0000ad74     0x11e2 src\syscalls.o
- .debug_info    0x0000bf56      0x5d0 src\system_stm32f4xx.o
+ .debug_info    0x00009777     0x1474 src\main.o
+ .debug_info    0x0000abeb       0x6e src\startup_stm32f4xx.o
+ .debug_info    0x0000ac59      0x121 src\stm32f4xx_it.o
+ .debug_info    0x0000ad7a     0x11e2 src\syscalls.o
+ .debug_info    0x0000bf5c      0x5d0 src\system_stm32f4xx.o
 
 .debug_abbrev   0x00000000     0x1e9a
  .debug_abbrev  0x00000000      0x1c5 FreeRTOS_Source\list.o
@@ -3379,7 +3379,7 @@ OUTPUT(STM32F4_Discovery_FreeRTOS_Simple_Demo.elf elf32-littlearm)
  .debug_str     0x00003578       0x84 src\STM32F4-Discovery_callback.o
                                 0x26d (size before relaxing)
  .debug_str     0x000035fc      0x4dd src\main.o
-                                0xbf0 (size before relaxing)
+                                0xbfd (size before relaxing)
  .debug_str     0x00003ad9       0x7b src\stm32f4xx_it.o
                                 0x243 (size before relaxing)
  .debug_str     0x00003b54      0x2af src\syscalls.o

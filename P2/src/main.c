@@ -100,12 +100,12 @@ static TickType_t t1_next_deadline_tick	= 0;
 static TickType_t t2_next_deadline_tick	= 0;
 static TickType_t t3_next_deadline_tick	= 0;
 
-void DD_Scheduler_Task(void *pv);
-void DD_Generator_Task(void *pv);
-void Monitor_Task(void *pv);
-void User_Defined_Task_1(void *pv);
-void User_Defined_Task_2(void *pv);
-void User_Defined_Task_3(void *pv);
+void DD_Scheduler_Task( void *pvParameters );
+void DD_Generator_Task( void *pvParameters );
+void Monitor_Task( void *pvParameters );
+void User_Defined_Task_1( void *pvParameters );
+void User_Defined_Task_2( void *pvParameters );
+void User_Defined_Task_3( void *pvParameters );
 
 void insert_node(dd_task_list **head, dd_task task);
 dd_task_list *remove_node(dd_task_list **head, uint32_t instance_id);
@@ -335,10 +335,9 @@ void handle_deadline_miss(void)
 
 // main scheduler task (core of DDS)
 // waits for messages like release/complete and handles deadlines
-void DD_Scheduler_Task(void *pv)
+void DD_Scheduler_Task( void *pvParameters )
 {
 	dds_message msg;
-	(void)pv;
 
 	for (;;) {
 		TickType_t timeout = get_next_timeout();
@@ -448,12 +447,11 @@ dd_task_list *get_overdue_dd_task_list(void)
 }
 
 // runs periodically and prints stats, active/completed/overdue
-void Monitor_Task(void *pv)
+void Monitor_Task( void *pvParameters )
 {
 	TickType_t last = xTaskGetTickCount();
 	uint32_t an, cn, on;
 	dd_task_list *a_list, *c_list, *o_list;
-	(void)pv;
 
 	for (;;) {
 		// periodic monitor every ~1.5 sec
@@ -476,9 +474,9 @@ void Monitor_Task(void *pv)
 
 // actual task 1 workload
 // waits for release signal then does busy work then completes
-void User_Defined_Task_1(void *pv)
+void User_Defined_Task_1( void *pvParameters )
 {
-	uint32_t iid; (void)pv;
+	uint32_t iid;
 	for (;;) {
 		xQueueReceive(task1_release_queue, &iid, portMAX_DELAY);
 		// wait until generator releases this task
@@ -490,9 +488,9 @@ void User_Defined_Task_1(void *pv)
 
 // same as task 1 but different execution time
 // simulates another periodic task
-void User_Defined_Task_2(void *pv)
+void User_Defined_Task_2( void *pvParameters )
 {
-	uint32_t iid; (void)pv;
+	uint32_t iid;
 	for (;;) {
 		xQueueReceive(task2_release_queue, &iid, portMAX_DELAY);
 		busy_wait_ms(T2_EXEC_MS);
@@ -502,9 +500,9 @@ void User_Defined_Task_2(void *pv)
 
 // third task  same pattern
 // just different timing params
-void User_Defined_Task_3(void *pv)
+void User_Defined_Task_3( void *pvParameters )
 {
-	uint32_t iid; (void)pv;
+	uint32_t iid;
 	for (;;) {
 		xQueueReceive(task3_release_queue, &iid, portMAX_DELAY);
 		busy_wait_ms(T3_EXEC_MS);
@@ -620,11 +618,10 @@ static void release_timer_cb(TimerHandle_t xTimer)
 
 // generates periodic tasks releases
 // manages release timing using timer + queues
-void DD_Generator_Task(void *pv)
+void DD_Generator_Task( void *pvParameters )
 {
 	TickType_t t0;
 	uint32_t tok;
-	(void)pv;
 
 	// queue to send release signals to task1
 	task1_release_queue = xQueueCreate(4, sizeof(uint32_t));

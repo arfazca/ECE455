@@ -21,21 +21,21 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
   8 .ARM.attributes 0000002e  00000000  00000000  00020080  2**0
                   CONTENTS, READONLY
-  9 .debug_info   0000c526  00000000  00000000  000200ae  2**0
+  9 .debug_info   0000c52c  00000000  00000000  000200ae  2**0
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_abbrev 00001e9a  00000000  00000000  0002c5d4  2**0
+ 10 .debug_abbrev 00001e9a  00000000  00000000  0002c5da  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_aranges 00000a90  00000000  00000000  0002e470  2**3
+ 11 .debug_aranges 00000a90  00000000  00000000  0002e478  2**3
                   CONTENTS, READONLY, DEBUGGING
- 12 .debug_ranges 00000998  00000000  00000000  0002ef00  2**3
+ 12 .debug_ranges 00000998  00000000  00000000  0002ef08  2**3
                   CONTENTS, READONLY, DEBUGGING
- 13 .debug_line   00004e11  00000000  00000000  0002f898  2**0
+ 13 .debug_line   00004e11  00000000  00000000  0002f8a0  2**0
                   CONTENTS, READONLY, DEBUGGING
- 14 .debug_str    00003f03  00000000  00000000  000346a9  2**0
+ 14 .debug_str    00003f03  00000000  00000000  000346b1  2**0
                   CONTENTS, READONLY, DEBUGGING
- 15 .comment      0000007c  00000000  00000000  000385ac  2**0
+ 15 .comment      0000007c  00000000  00000000  000385b4  2**0
                   CONTENTS, READONLY
- 16 .debug_frame  00003144  00000000  00000000  00038628  2**2
+ 16 .debug_frame  00003144  00000000  00000000  00038630  2**2
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -9701,14 +9701,13 @@ void handle_deadline_miss(void)
 
 // main scheduler task (core of DDS)
 // waits for messages like release/complete and handles deadlines
-void DD_Scheduler_Task(void *pv)
+void DD_Scheduler_Task( void *pvParameters )
 {
  8003550:	b580      	push	{r7, lr}
  8003552:	b090      	sub	sp, #64	; 0x40
  8003554:	af00      	add	r7, sp, #0
  8003556:	6078      	str	r0, [r7, #4]
 	dds_message msg;
-	(void)pv;
 
 	for (;;) {
 		TickType_t timeout = get_next_timeout();
@@ -10062,7 +10061,7 @@ dd_task_list *get_overdue_dd_task_list(void)
 080037a0 <Monitor_Task>:
 
 // runs periodically and prints stats, active/completed/overdue
-void Monitor_Task(void *pv)
+void Monitor_Task( void *pvParameters )
 {
  80037a0:	b580      	push	{r7, lr}
  80037a2:	b08a      	sub	sp, #40	; 0x28
@@ -10072,8 +10071,8 @@ void Monitor_Task(void *pv)
  80037a8:	f7fe faa6 	bl	8001cf8 <xTaskGetTickCount>
  80037ac:	4603      	mov	r3, r0
  80037ae:	60fb      	str	r3, [r7, #12]
+	uint32_t an, cn, on;
 	dd_task_list *a_list, *c_list, *o_list;
-	(void)pv;
 
 	for (;;) {
 		// periodic monitor every ~1.5 sec
@@ -10122,13 +10121,13 @@ void Monitor_Task(void *pv)
 
 // actual task 1 workload
 // waits for release signal then does busy work then completes
-void User_Defined_Task_1(void *pv)
+void User_Defined_Task_1( void *pvParameters )
 {
  80037fc:	b580      	push	{r7, lr}
  80037fe:	b084      	sub	sp, #16
  8003800:	af00      	add	r7, sp, #0
  8003802:	6078      	str	r0, [r7, #4]
-	uint32_t iid; (void)pv;
+	uint32_t iid;
 	for (;;) {
 		xQueueReceive(task1_release_queue, &iid, portMAX_DELAY);
  8003804:	4b08      	ldr	r3, [pc, #32]	; (8003828 <User_Defined_Task_1+0x2c>)
@@ -10156,13 +10155,13 @@ void User_Defined_Task_1(void *pv)
 
 // same as task 1 but different execution time
 // simulates another periodic task
-void User_Defined_Task_2(void *pv)
+void User_Defined_Task_2( void *pvParameters )
 {
  800382c:	b580      	push	{r7, lr}
  800382e:	b084      	sub	sp, #16
  8003830:	af00      	add	r7, sp, #0
  8003832:	6078      	str	r0, [r7, #4]
-	uint32_t iid; (void)pv;
+	uint32_t iid;
 	for (;;) {
 		xQueueReceive(task2_release_queue, &iid, portMAX_DELAY);
  8003834:	4b08      	ldr	r3, [pc, #32]	; (8003858 <User_Defined_Task_2+0x2c>)
@@ -10188,13 +10187,13 @@ void User_Defined_Task_2(void *pv)
 
 // third task  same pattern
 // just different timing params
-void User_Defined_Task_3(void *pv)
+void User_Defined_Task_3( void *pvParameters )
 {
  800385c:	b580      	push	{r7, lr}
  800385e:	b084      	sub	sp, #16
  8003860:	af00      	add	r7, sp, #0
  8003862:	6078      	str	r0, [r7, #4]
-	uint32_t iid; (void)pv;
+	uint32_t iid;
 	for (;;) {
 		xQueueReceive(task3_release_queue, &iid, portMAX_DELAY);
  8003864:	4b08      	ldr	r3, [pc, #32]	; (8003888 <User_Defined_Task_3+0x2c>)
@@ -10653,7 +10652,7 @@ static void release_timer_cb(TimerHandle_t xTimer)
 
 // generates periodic tasks releases
 // manages release timing using timer + queues
-void DD_Generator_Task(void *pv)
+void DD_Generator_Task( void *pvParameters )
 {
  8003b4c:	b580      	push	{r7, lr}
  8003b4e:	b086      	sub	sp, #24
@@ -10661,7 +10660,6 @@ void DD_Generator_Task(void *pv)
  8003b52:	6078      	str	r0, [r7, #4]
 	TickType_t t0;
 	uint32_t tok;
-	(void)pv;
 
 	// queue to send release signals to task1
 	task1_release_queue = xQueueCreate(4, sizeof(uint32_t));
