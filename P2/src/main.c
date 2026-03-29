@@ -9,94 +9,93 @@
 #include "semphr.h"
 #include "timers.h"
 
-#define TEST_BENCH 1
+#define TEST_BENCH 3
 #if TEST_BENCH == 1
-#define T1_EXEC_MS		95
-#define T1_PERIOD_MS	500
-#define T2_EXEC_MS		150
-#define T2_PERIOD_MS	500
-#define T3_EXEC_MS		250
-#define T3_PERIOD_MS	750
+#define T1_EXEC_MS 95
+#define T1_PERIOD_MS 500
+#define T2_EXEC_MS 150
+#define T2_PERIOD_MS 500
+#define T3_EXEC_MS 250
+#define T3_PERIOD_MS 750
 
 #elif TEST_BENCH == 2
-#define T1_EXEC_MS		95
-#define T1_PERIOD_MS	250
-#define T2_EXEC_MS		150
-#define T2_PERIOD_MS	500
-#define T3_EXEC_MS		250
-#define T3_PERIOD_MS	750
+#define T1_EXEC_MS 95
+#define T1_PERIOD_MS 250
+#define T2_EXEC_MS 150
+#define T2_PERIOD_MS 500
+#define T3_EXEC_MS 250
+#define T3_PERIOD_MS 750
 
 #elif TEST_BENCH == 3
-#define T1_EXEC_MS		100
-#define T1_PERIOD_MS	500
-#define T2_EXEC_MS		200
-#define T2_PERIOD_MS	500
-#define T3_EXEC_MS		200
-#define T3_PERIOD_MS	500
+#define T1_EXEC_MS 100
+#define T1_PERIOD_MS 500
+#define T2_EXEC_MS 200
+#define T2_PERIOD_MS 500
+#define T3_EXEC_MS 200
+#define T3_PERIOD_MS 500
 
 #else
 #error "TEST_BENCH must be 1, 2, or 3"
 #endif
 
-#define PRIORITY_DDS		5
-#define PRIORITY_MONITOR	4
-#define PRIORITY_GENERATOR	3
-#define PRIORITY_USER_HIGH	2
-#define PRIORITY_USER_LOW	1
+#define PRIORITY_DDS 5
+#define PRIORITY_MONITOR 4
+#define PRIORITY_GENERATOR 3
+#define PRIORITY_USER_HIGH 2
+#define PRIORITY_USER_LOW 1
 
-#define TICKS_TO_MS(t)		((uint32_t)((t) * 1000u / configTICK_RATE_HZ))
-#define GENERATOR_TOKEN		((uint32_t)1u)
-
+#define TICKS_TO_MS(t) ((uint32_t)((t) * 1000u / configTICK_RATE_HZ))
+#define GENERATOR_WAKE_UP	((uint32_t)1u)
 typedef enum { PERIODIC, APERIODIC } task_type;
 
 typedef struct {
-	TaskHandle_t	t_handle;
-	task_type		type;
-	uint32_t		task_id;
-	uint32_t		instance_id;
-	uint32_t		release_time;
-	uint32_t		absolute_deadline;
-	uint32_t		completion_time;
+	TaskHandle_t t_handle;
+	task_type type;
+	uint32_t task_id;
+	uint32_t instance_id;
+	uint32_t release_time;
+	uint32_t absolute_deadline;
+	uint32_t completion_time;
 } dd_task;
 
 typedef struct dd_task_node {
-	dd_task					task;
-	struct dd_task_node		*next;
+	dd_task	task;
+	struct dd_task_node	*next;
 } dd_task_list;
 
-#define MSG_RELEASE			1u
-#define MSG_COMPLETE		2u
-#define MSG_GET_ACTIVE		3u
-#define MSG_GET_COMPLETED	4u
-#define MSG_GET_OVERDUE		5u
+#define MSG_RELEASE 1u
+#define MSG_COMPLETE 2u
+#define MSG_GET_ACTIVE 3u
+#define MSG_GET_COMPLETED 4u
+#define MSG_GET_OVERDUE 5u
 
 typedef struct {
-	uint32_t		msg_type;
-	dd_task			task;
-	QueueHandle_t	reply_queue;
+	uint32_t msg_type;
+	dd_task	task;
+	QueueHandle_t reply_queue;
 } dds_message;
 
 typedef struct { dd_task_list *list; } dds_reply;
 
-static QueueHandle_t		dds_queue;
-static QueueHandle_t		generator_queue;
-static QueueHandle_t		task1_release_queue;
-static QueueHandle_t		task2_release_queue;
-static QueueHandle_t		task3_release_queue;
-static TimerHandle_t		release_timer;
-static SemaphoreHandle_t	print_mutex;
+static QueueHandle_t dds_queue;
+static QueueHandle_t generator_queue;
+static QueueHandle_t task1_release_queue;
+static QueueHandle_t task2_release_queue;
+static QueueHandle_t task3_release_queue;
+static TimerHandle_t release_timer;
+static SemaphoreHandle_t print_mutex;
 
-static dd_task_list	*active_list	= NULL;
+static dd_task_list	*active_list = NULL;
 static dd_task_list	*completed_list	= NULL;
-static dd_task_list	*overdue_list	= NULL;
+static dd_task_list	*overdue_list = NULL;
 static uint32_t next_instance_id = 1;
 static TaskHandle_t task1_handle = NULL;
 static TaskHandle_t task2_handle = NULL;
 static TaskHandle_t task3_handle = NULL;
 
-static TickType_t t1_next_release_tick	= 0;
-static TickType_t t2_next_release_tick	= 0;
-static TickType_t t3_next_release_tick	= 0;
+static TickType_t t1_next_release_tick = 0;
+static TickType_t t2_next_release_tick = 0;
+static TickType_t t3_next_release_tick = 0;
 static TickType_t t1_next_deadline_tick	= 0;
 static TickType_t t2_next_deadline_tick	= 0;
 static TickType_t t3_next_deadline_tick	= 0;
@@ -108,47 +107,42 @@ void User_Defined_Task_1(void *pv);
 void User_Defined_Task_2(void *pv);
 void User_Defined_Task_3(void *pv);
 
-void					insert_node(dd_task_list **head, dd_task task);
-dd_task_list			*remove_node(dd_task_list **head, uint32_t instance_id);
-uint32_t				get_list_size(dd_task_list *head);
-TickType_t				get_next_timeout(void);
-void					adjust_priorities(void);
-void					handle_release(dds_message *msg);
-void					handle_complete(dds_message *msg);
-void					handle_deadline_miss(void);
+void insert_node(dd_task_list **head, dd_task task);
+dd_task_list *remove_node(dd_task_list **head, uint32_t instance_id);
+uint32_t get_list_size(dd_task_list *head);
+TickType_t get_next_timeout(void);
+void adjust_priorities(void);
+void handle_release(dds_message *msg);
+void handle_complete(dds_message *msg);
+void handle_deadline_miss(void);
+uint32_t release_dd_task(TaskHandle_t h, task_type t, uint32_t id, uint32_t relative_deadline);
+void complete_dd_task(uint32_t instance_id);
+dd_task_list *get_active_dd_task_list(void);
+dd_task_list *get_completed_dd_task_list(void);
+dd_task_list *get_overdue_dd_task_list(void);
 
-uint32_t				release_dd_task(TaskHandle_t h, task_type t,
-							uint32_t id, uint32_t relative_deadline);
-void					complete_dd_task(uint32_t instance_id);
-dd_task_list			*get_active_dd_task_list(void);
-dd_task_list			*get_completed_dd_task_list(void);
-dd_task_list			*get_overdue_dd_task_list(void);
-
-static void				dwt_init(void);
-static void				busy_wait_ms(uint32_t ms);
-static QueueHandle_t	get_release_queue(uint32_t id);
-static TaskHandle_t		get_task_handle_for(uint32_t id);
-static TickType_t		get_period_ticks(uint32_t id);
-static TickType_t		get_next_release_min(void);
-static void				arm_release_timer(void);
-static void				release_due_tasks(void);
-static void				release_one_task(uint32_t id, task_type type,
-							TickType_t rel, TickType_t dl);
-static void				release_timer_cb(TimerHandle_t xTimer);
-static void				sem_printf(const char *fmt, ...);
+static void	dwt_init(void);
+static void	busy_wait_ms(uint32_t ms);
+static QueueHandle_t get_release_queue(uint32_t id);
+static TaskHandle_t	get_task_handle_for(uint32_t id);
+static TickType_t get_period_ticks(uint32_t id);
+static TickType_t get_next_release_min(void);
+static void	arm_release_timer(void);
+static void	release_due_tasks(void);
+static void	release_one_task(uint32_t id, task_type type, TickType_t rel, TickType_t dl);
+static void	release_timer_cb(TimerHandle_t xTimer);
+static void	sem_printf(const char *fmt, ...);
 
 // prints stuff but uses mutex so threads dont mess up output  TBH just safer printf
 // kinda wraps vprintf and locks before printing then unlocks after
 static void sem_printf(const char *fmt, ...)
 {
 	va_list args;
-	if (print_mutex != NULL)
-		xSemaphoreTake(print_mutex, portMAX_DELAY);
+	if (print_mutex != NULL) { xSemaphoreTake(print_mutex, portMAX_DELAY); }
 	va_start(args, fmt);
 	vprintf(fmt, args);
 	va_end(args);
-	if (print_mutex != NULL)
-		xSemaphoreGive(print_mutex);
+	if (print_mutex != NULL) { xSemaphoreGive(print_mutex); }
 }
 
 #define REG_DEMCR			(*((volatile uint32_t *)0xE000EDFCu))
@@ -157,7 +151,7 @@ static void sem_printf(const char *fmt, ...)
 #define DEMCR_TRCENA_BIT	(1UL << 24)
 #define DWT_CYCCNTENA_BIT	(1UL << 0)
 
-// init the cycle counter thingy (DWT) so we can measure time more accurately
+// init the cycle counter so we can measure time more accurately
 // needed for busy wait otherwise timing would be off
 static void dwt_init(void)
 {
@@ -166,7 +160,7 @@ static void dwt_init(void)
 	REG_DWT_CTRL |= DWT_CYCCNTENA_BIT;
 }
 
-// just wastes time for given ms using cpu cycles (not ideal but ok here)
+// just wastes time for given ms using cpu cycles ,not ideal but ok here
 // uses DWT counter so kinda precise  but still busy waiting
 static void busy_wait_ms(uint32_t ms)
 {
@@ -179,32 +173,36 @@ static void busy_wait_ms(uint32_t ms)
 		uint32_t now_cyc = REG_DWT_CYCCNT;
 		TickType_t now_tick = xTaskGetTickCount();
 		if (now_tick == prev_tick)
+		{
 			cycles_done += (now_cyc - prev_cyc);
+		}
 		prev_cyc = now_cyc;
 		prev_tick = now_tick;
 	}
 }
 
-// inserts task into linked list sorted by deadline (EDF style)
+// inserts task into linked list sorted by deadline
 // earlier deadline = higher priority so goes closer to head
 void insert_node(dd_task_list **head, dd_task task)
 {
 	dd_task_list *new_node;
 	dd_task_list *curr;
-	new_node = (dd_task_list *)pvPortMalloc(sizeof(dd_task_list));
-	if (new_node == NULL) return;
-
+	new_node = (dd_task_list *)pvPortMalloc(sizeof(dd_task_list)); // alloc mem  for new node
+	if (new_node == NULL) { return; }
 	new_node->task = task;
 	new_node->next = NULL;
 
 	if (*head == NULL) { *head = new_node; return; }
-	if (task.absolute_deadline < (*head)->task.absolute_deadline) {
+	// insert at front if earlier deadline  ,EDF priority basically
+	if (task.absolute_deadline < (*head)->task.absolute_deadline)
+	{
 		new_node->next = *head;
 		*head = new_node;
 		return;
 	}
 
 	curr = *head;
+	// looping till correct spot  keeping list sorted by deadline
 	while (curr->next != NULL &&
 		   curr->next->task.absolute_deadline <= task.absolute_deadline)
 		curr = curr->next;
@@ -219,8 +217,9 @@ dd_task_list *remove_node(dd_task_list **head, uint32_t instance_id)
 {
 	dd_task_list *prev, *curr;
 	if (*head == NULL) return NULL;
-
-	if ((*head)->task.instance_id == instance_id) {
+	// special case: removing head node  gotta update head pointer
+	if ((*head)->task.instance_id == instance_id)
+	{
 		dd_task_list *r = *head;
 		*head = (*head)->next;
 		r->next = NULL;
@@ -230,7 +229,9 @@ dd_task_list *remove_node(dd_task_list **head, uint32_t instance_id)
 	prev = *head;
 	curr = (*head)->next;
 	while (curr != NULL) {
-		if (curr->task.instance_id == instance_id) {
+		// traverse list to find matching instance id
+		if (curr->task.instance_id == instance_id)
+		{
 			prev->next = curr->next;
 			curr->next = NULL;
 			return curr;
@@ -255,10 +256,12 @@ uint32_t get_list_size(dd_task_list *head)
 TickType_t get_next_timeout(void)
 {
 	TickType_t now, dl;
-	if (active_list == NULL) return portMAX_DELAY;
+	// no tasks rn so scheduler can chill (wait forever)
+	if (active_list == NULL) { return portMAX_DELAY; }
 	now = xTaskGetTickCount();
 	dl = (TickType_t)active_list->task.absolute_deadline;
-	if (dl <= now) return 0;
+	// deadline already passed so timeout immediately
+	if (dl <= now) { return 0; }
 	return dl - now;
 }
 
@@ -268,6 +271,7 @@ void adjust_priorities(void)
 {
 	dd_task_list *curr = active_list;
 	while (curr != NULL) {
+		// updating priority dynamically based on EDF
 		vTaskPrioritySet(curr->task.t_handle,
 						 (curr == active_list) ? PRIORITY_USER_HIGH
 											   : PRIORITY_USER_LOW);
@@ -281,8 +285,9 @@ void handle_release(dds_message *msg)
 {
 	TickType_t now = xTaskGetTickCount();
 	msg->task.release_time = (uint32_t)now;
+	// converting relative dl -> absolute dl
 	msg->task.absolute_deadline = (uint32_t)(now + (TickType_t)msg->task.absolute_deadline);
-	insert_node(&active_list, msg->task);
+	insert_node(&active_list, msg->task); // add to active  list sorted by deadline
 	adjust_priorities();
 	sem_printf("T%u R:%ums\n",
 		   (unsigned int)msg->task.task_id,
@@ -293,11 +298,13 @@ void handle_release(dds_message *msg)
 // removes from active list and pushes into completed list
 void handle_complete(dds_message *msg)
 {
+	// take task out of active list when done
 	dd_task_list *node = remove_node(&active_list, msg->task.instance_id);
-	if (node != NULL) {
+	if (node != NULL)
+	{
 		node->task.completion_time = xTaskGetTickCount();
 		vTaskPrioritySet(node->task.t_handle, PRIORITY_USER_LOW);
-		node->next = completed_list;
+		node->next = completed_list; // push to completed list, not sorted btw just stack
 		completed_list = node;
 		adjust_priorities();
 		sem_printf("T%u C:%ums\n",
@@ -313,13 +320,13 @@ void handle_complete(dds_message *msg)
 void handle_deadline_miss(void)
 {
 	dd_task_list *missed;
-	if (active_list == NULL) return;
-	missed = active_list;
+	if (active_list == NULL) { return; }
+	missed = active_list; // take the earliest deadline task head as missed
 	active_list = active_list->next;
 	missed->next = NULL;
 	vTaskPrioritySet(missed->task.t_handle, PRIORITY_USER_LOW);
 	missed->next = overdue_list;
-	overdue_list = missed;
+	overdue_list = missed; // move it to overdue list
 	adjust_priorities();
 	sem_printf("T%u M:%ums\n",
 		   (unsigned int)missed->task.task_id,
@@ -335,9 +342,12 @@ void DD_Scheduler_Task(void *pv)
 
 	for (;;) {
 		TickType_t timeout = get_next_timeout();
+		// wait for msg OR timeout
+		// timeout = possible deadline miss
 		BaseType_t received = xQueueReceive(dds_queue, &msg, timeout);
 
-		if (received == pdTRUE) {
+		if (received == pdTRUE)
+		{
 			switch (msg.msg_type) {
 				case MSG_RELEASE:	handle_release(&msg);	break;
 				case MSG_COMPLETE:	handle_complete(&msg);	break;
@@ -361,7 +371,7 @@ void DD_Scheduler_Task(void *pv)
 				}
 				default: break;
 			}
-		} else { handle_deadline_miss(); }
+		} else { handle_deadline_miss(); } // no msg = deadline missed  kinda clever tbh
 	}
 }
 
@@ -371,7 +381,7 @@ uint32_t release_dd_task(TaskHandle_t h, task_type t, uint32_t id,
 					 uint32_t relative_deadline)
 {
 	dds_message msg;
-	uint32_t iid = next_instance_id++;
+	uint32_t iid = next_instance_id++; // unique id for each task instance, auto increment
 	msg.msg_type = MSG_RELEASE;
 	msg.task.t_handle = h;
 	msg.task.type = t;
@@ -381,6 +391,7 @@ uint32_t release_dd_task(TaskHandle_t h, task_type t, uint32_t id,
 	msg.task.absolute_deadline = relative_deadline;
 	msg.task.completion_time = 0;
 	msg.reply_queue = NULL;
+	// send msg to scheduler, blocking if needed
 	xQueueSend(dds_queue, &msg, portMAX_DELAY);
 	return iid;
 }
@@ -400,6 +411,7 @@ void complete_dd_task(uint32_t instance_id)
 // uses queue to get reply (kind of request-response pattern)
 dd_task_list *get_active_dd_task_list(void)
 {
+	// temp queue for reply
 	QueueHandle_t rq = xQueueCreate(1, sizeof(dds_reply));
 	dds_message msg; dds_reply reply;
 	msg.msg_type = MSG_GET_ACTIVE; msg.reply_queue = rq;
@@ -417,7 +429,7 @@ dd_task_list *get_completed_dd_task_list(void)
 	dds_message msg; dds_reply reply;
 	msg.msg_type = MSG_GET_COMPLETED; msg.reply_queue = rq;
 	xQueueSend(dds_queue, &msg, portMAX_DELAY);
-	xQueueReceive(rq, &reply, portMAX_DELAY);
+	xQueueReceive(rq, &reply, portMAX_DELAY); // wait for scheduler response
 	vQueueDelete(rq);
 	return reply.list;
 }
@@ -435,7 +447,7 @@ dd_task_list *get_overdue_dd_task_list(void)
 	return reply.list;
 }
 
-// runs periodically and prints stats (active/completed/overdue)
+// runs periodically and prints stats, active/completed/overdue
 void Monitor_Task(void *pv)
 {
 	TickType_t last = xTaskGetTickCount();
@@ -444,6 +456,7 @@ void Monitor_Task(void *pv)
 	(void)pv;
 
 	for (;;) {
+		// periodic monitor every ~1.5 sec
 		vTaskDelayUntil(&last, pdMS_TO_TICKS(1500));
 
 		a_list = get_active_dd_task_list();
@@ -468,7 +481,9 @@ void User_Defined_Task_1(void *pv)
 	uint32_t iid; (void)pv;
 	for (;;) {
 		xQueueReceive(task1_release_queue, &iid, portMAX_DELAY);
+		// wait until generator releases this task
 		busy_wait_ms(T1_EXEC_MS);
+		// simulate execution time
 		complete_dd_task(iid);
 	}
 }
@@ -538,8 +553,8 @@ static TickType_t get_period_ticks(uint32_t id)
 static TickType_t get_next_release_min(void)
 {
 	TickType_t n = t1_next_release_tick;
-	if (t2_next_release_tick < n) n = t2_next_release_tick;
-	if (t3_next_release_tick < n) n = t3_next_release_tick;
+	if (t2_next_release_tick < n) { n = t2_next_release_tick; }
+	if (t3_next_release_tick < n) { n = t3_next_release_tick; }
 	return n;
 }
 
@@ -550,10 +565,10 @@ static void release_one_task(uint32_t id, task_type type,
 {
 	QueueHandle_t q = get_release_queue(id);
 	TaskHandle_t h = get_task_handle_for(id);
-	TickType_t relative_deadline = dl - rel;
+	TickType_t relative_deadline = dl - rel; // compute relative deadline from abs times
 	uint32_t iid;
 
-	if (q == NULL || h == NULL) return;
+	if (q == NULL || h == NULL) { return; }
 
 	iid = release_dd_task(h, type, id, (uint32_t)relative_deadline);
 	xQueueSend(q, &iid, portMAX_DELAY);
@@ -564,10 +579,10 @@ static void release_one_task(uint32_t id, task_type type,
 static void release_due_tasks(void)
 {
 	TickType_t now = xTaskGetTickCount();
-
 	while (t1_next_release_tick <= now) {
+		// release tasks if we are behind schedule, catch up loop
 		release_one_task(1u, PERIODIC, t1_next_release_tick, t1_next_deadline_tick);
-		t1_next_release_tick += get_period_ticks(1u);
+		t1_next_release_tick += get_period_ticks(1u); // move to next release time
 		t1_next_deadline_tick += get_period_ticks(1u);
 	}
 	while (t2_next_release_tick <= now) {
@@ -589,15 +604,17 @@ static void arm_release_timer(void)
 	TickType_t next = get_next_release_min();
 	TickType_t now = xTaskGetTickCount();
 	TickType_t delay = (next <= now) ? 1u : (next - now);
+	// if already passed just trigger ASAP (1 tick)
 	xTimerChangePeriod(release_timer, delay, 0);
 }
 
-// timer callback just sends token to generator task
+// timer callback just sends it to generator task
 // cant do heavy work here so just notify
 static void release_timer_cb(TimerHandle_t xTimer)
 {
-	uint32_t tok = GENERATOR_TOKEN;
+	uint32_t tok = GENERATOR_WAKE_UP;
 	(void)xTimer;
+	// notify generator task (no blocking here)
 	xQueueSend(generator_queue, &tok, 0);
 }
 
@@ -609,10 +626,12 @@ void DD_Generator_Task(void *pv)
 	uint32_t tok;
 	(void)pv;
 
+	// queue to send release signals to task1
 	task1_release_queue = xQueueCreate(4, sizeof(uint32_t));
 	task2_release_queue = xQueueCreate(4, sizeof(uint32_t));
 	task3_release_queue = xQueueCreate(4, sizeof(uint32_t));
 
+	// creating user task 1
 	xTaskCreate(User_Defined_Task_1, "T1", configMINIMAL_STACK_SIZE + 128,
 				NULL, PRIORITY_USER_LOW, &task1_handle);
 	xTaskCreate(User_Defined_Task_2, "T2", configMINIMAL_STACK_SIZE + 128,
@@ -630,8 +649,7 @@ void DD_Generator_Task(void *pv)
 
 	release_timer = xTimerCreate("RelTmr", pdMS_TO_TICKS(1),
 								 pdFALSE, (void *)0, release_timer_cb);
-
-	release_due_tasks();
+	release_due_tasks(); // release tasks at startup, so we dont wait first timer
 	arm_release_timer();
 
 	for (;;) {
@@ -641,33 +659,62 @@ void DD_Generator_Task(void *pv)
 	}
 }
 
-// sets everything up (queues, tasks, scheduler)
+// sets everything up like queues, tasks, scheduler
 // then starts RTOS scheduler
 int main(void)
 {
 	dwt_init();
-
+	// main queue for scheduler comms
 	dds_queue = xQueueCreate(16, sizeof(dds_message));
 	generator_queue = xQueueCreate(8, sizeof(uint32_t));
 	print_mutex = xSemaphoreCreateMutex();
 
-	xTaskCreate(DD_Scheduler_Task, "DDS", configMINIMAL_STACK_SIZE,
-				NULL, PRIORITY_DDS, NULL);
-	xTaskCreate(Monitor_Task, "Mon", configMINIMAL_STACK_SIZE,
-				NULL, PRIORITY_MONITOR, NULL);
-	xTaskCreate(DD_Generator_Task, "Gen", configMINIMAL_STACK_SIZE,
-				NULL, PRIORITY_GENERATOR, NULL);
-
+	xTaskCreate(DD_Scheduler_Task, "DDS", configMINIMAL_STACK_SIZE, NULL, PRIORITY_DDS, NULL);
+	xTaskCreate(Monitor_Task, "Mon", configMINIMAL_STACK_SIZE, NULL, PRIORITY_MONITOR, NULL);
+	xTaskCreate(DD_Generator_Task, "Gen", configMINIMAL_STACK_SIZE, NULL, PRIORITY_GENERATOR, NULL);
+	// start RTOS  after this no coming back
 	vTaskStartScheduler();
 	while (1) {}
 }
-// called if malloc fails  just stuck in loop (bad but ok for debug)
-void vApplicationMallocFailedHook(void)										{ for (;;); }
 
-// called if stack overflow happens
-// again just infinite loop so we notice crash
-void vApplicationStackOverflowHook(xTaskHandle t, signed char *n)			{ (void)t; (void)n; for (;;); }
+void vApplicationMallocFailedHook( void )
+{
+	// The malloc failed hook is enabled by setting
+	// configUSE_MALLOC_FAILED_HOOK to 1 in FreeRTOSConfig.h.
+	//
+	// Called if a call to pvPortMalloc() fails because there is insufficient
+	// free memory available in the FreeRTOS heap.  pvPortMalloc() is called
+	// internally by FreeRTOS API functions that create tasks, queues, software
+	// timers, and semaphores.  The size of the FreeRTOS heap is set by the
+	// configTOTAL_HEAP_SIZE configuration constant in FreeRTOSConfig.h.
+	for( ;; );
+}
 
-// runs when idle  just checking free heap for debug
-// not doing much honestly
-void vApplicationIdleHook(void) { volatile size_t s = xPortGetFreeHeapSize(); (void)s; }
+void vApplicationStackOverflowHook( xTaskHandle pxTask, signed char *pcTaskName )
+{
+	( void ) pcTaskName;
+	( void ) pxTask;
+	// Run time stack overflow checking is performed if configconfigCHECK_FOR_STACK_OVERFLOW is
+	// defined to 1 or 2.  This hook
+	// function is called if a stack overflow is detected.  pxCurrentTCB can be
+	// inspected in the debugger if the task name passed into this function is corrupt.
+	for( ;; );
+}
+
+void vApplicationIdleHook( void )
+{
+	volatile size_t xFreeStackSpace;
+
+	// The idle task hook is enabled by setting configUSE_IDLE_HOOK to 1 in FreeRTOSConfig.h.
+	//
+	// This function is called on each cycle of the idle task.  In this case it
+	// does nothing useful, other than report the amount of FreeRTOS heap that  remains unallocated.
+	xFreeStackSpace = xPortGetFreeHeapSize();
+
+	if( xFreeStackSpace > 100 )
+	{
+		//	By now, the kernel has allocated everything it is going to, so
+		//	if there is a lot of heap remaining unallocated then
+		// the value of configTOTAL_HEAP_SIZE in FreeRTOSConfig.h can be reduced accordingly.
+	}
+}

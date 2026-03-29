@@ -21,21 +21,21 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
   8 .ARM.attributes 0000002e  00000000  00000000  00020080  2**0
                   CONTENTS, READONLY
-  9 .debug_info   0000c51f  00000000  00000000  000200ae  2**0
+  9 .debug_info   0000c526  00000000  00000000  000200ae  2**0
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_abbrev 00001eb6  00000000  00000000  0002c5cd  2**0
+ 10 .debug_abbrev 00001e9a  00000000  00000000  0002c5d4  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_aranges 00000a90  00000000  00000000  0002e488  2**3
+ 11 .debug_aranges 00000a90  00000000  00000000  0002e470  2**3
                   CONTENTS, READONLY, DEBUGGING
- 12 .debug_ranges 00000998  00000000  00000000  0002ef18  2**3
+ 12 .debug_ranges 00000998  00000000  00000000  0002ef00  2**3
                   CONTENTS, READONLY, DEBUGGING
- 13 .debug_line   00004dff  00000000  00000000  0002f8b0  2**0
+ 13 .debug_line   00004e11  00000000  00000000  0002f898  2**0
                   CONTENTS, READONLY, DEBUGGING
- 14 .debug_str    00003ef2  00000000  00000000  000346af  2**0
+ 14 .debug_str    00003f03  00000000  00000000  000346a9  2**0
                   CONTENTS, READONLY, DEBUGGING
- 15 .comment      0000007c  00000000  00000000  000385a1  2**0
+ 15 .comment      0000007c  00000000  00000000  000385ac  2**0
                   CONTENTS, READONLY
- 16 .debug_frame  00003144  00000000  00000000  00038620  2**2
+ 16 .debug_frame  00003144  00000000  00000000  00038628  2**2
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -8982,7 +8982,7 @@ __attribute__((weak)) uint16_t EVAL_AUDIO_GetSampleCallBack(void)
 	...
 
 080030fc <sem_printf>:
-static void				sem_printf(const char *fmt, ...);
+static void	sem_printf(const char *fmt, ...);
 
 // prints stuff but uses mutex so threads dont mess up output  TBH just safer printf
 // kinda wraps vprintf and locks before printing then unlocks after
@@ -8993,12 +8993,11 @@ static void sem_printf(const char *fmt, ...)
  8003100:	b082      	sub	sp, #8
  8003102:	af00      	add	r7, sp, #0
 	va_list args;
-	if (print_mutex != NULL)
+	if (print_mutex != NULL) { xSemaphoreTake(print_mutex, portMAX_DELAY); }
  8003104:	4b12      	ldr	r3, [pc, #72]	; (8003150 <sem_printf+0x54>)
  8003106:	681b      	ldr	r3, [r3, #0]
  8003108:	2b00      	cmp	r3, #0
  800310a:	d007      	beq.n	800311c <sem_printf+0x20>
-		xSemaphoreTake(print_mutex, portMAX_DELAY);
  800310c:	4b10      	ldr	r3, [pc, #64]	; (8003150 <sem_printf+0x54>)
  800310e:	6818      	ldr	r0, [r3, #0]
  8003110:	2300      	movs	r3, #0
@@ -9013,12 +9012,11 @@ static void sem_printf(const char *fmt, ...)
  8003124:	6938      	ldr	r0, [r7, #16]
  8003126:	f001 f809 	bl	800413c <viprintf>
 	va_end(args);
-	if (print_mutex != NULL)
+	if (print_mutex != NULL) { xSemaphoreGive(print_mutex); }
  800312a:	4b09      	ldr	r3, [pc, #36]	; (8003150 <sem_printf+0x54>)
  800312c:	681b      	ldr	r3, [r3, #0]
  800312e:	2b00      	cmp	r3, #0
  8003130:	d006      	beq.n	8003140 <sem_printf+0x44>
-		xSemaphoreGive(print_mutex);
  8003132:	4b07      	ldr	r3, [pc, #28]	; (8003150 <sem_printf+0x54>)
  8003134:	6818      	ldr	r0, [r3, #0]
  8003136:	2300      	movs	r3, #0
@@ -9038,7 +9036,7 @@ static void sem_printf(const char *fmt, ...)
 08003154 <dwt_init>:
 #define DWT_CYCCNTENA_BIT	(1UL << 0)
 
-// init the cycle counter thingy (DWT) so we can measure time more accurately
+// init the cycle counter so we can measure time more accurately
 // needed for busy wait otherwise timing would be off
 static void dwt_init(void)
 {
@@ -9071,7 +9069,7 @@ static void dwt_init(void)
 
 0800318c <busy_wait_ms>:
 
-// just wastes time for given ms using cpu cycles (not ideal but ok here)
+// just wastes time for given ms using cpu cycles ,not ideal but ok here
 // uses DWT counter so kinda precise  but still busy waiting
 static void busy_wait_ms(uint32_t ms)
 {
@@ -9113,6 +9111,7 @@ static void busy_wait_ms(uint32_t ms)
  80031c8:	697b      	ldr	r3, [r7, #20]
  80031ca:	429a      	cmp	r2, r3
  80031cc:	d105      	bne.n	80031da <busy_wait_ms+0x4e>
+		{
 			cycles_done += (now_cyc - prev_cyc);
  80031ce:	68fa      	ldr	r2, [r7, #12]
  80031d0:	69bb      	ldr	r3, [r7, #24]
@@ -9120,6 +9119,7 @@ static void busy_wait_ms(uint32_t ms)
  80031d4:	69fa      	ldr	r2, [r7, #28]
  80031d6:	4413      	add	r3, r2
  80031d8:	61fb      	str	r3, [r7, #28]
+		}
 		prev_cyc = now_cyc;
  80031da:	68fb      	ldr	r3, [r7, #12]
  80031dc:	61bb      	str	r3, [r7, #24]
@@ -9144,7 +9144,7 @@ static void busy_wait_ms(uint32_t ms)
 
 08003200 <insert_node>:
 
-// inserts task into linked list sorted by deadline (EDF style)
+// inserts task into linked list sorted by deadline
 // earlier deadline = higher priority so goes closer to head
 void insert_node(dd_task_list **head, dd_task task)
 {
@@ -9157,15 +9157,14 @@ void insert_node(dd_task_list **head, dd_task task)
  800320e:	e880 000e 	stmia.w	r0, {r1, r2, r3}
 	dd_task_list *new_node;
 	dd_task_list *curr;
-	new_node = (dd_task_list *)pvPortMalloc(sizeof(dd_task_list));
+	new_node = (dd_task_list *)pvPortMalloc(sizeof(dd_task_list)); // alloc mem  for new node
  8003212:	2020      	movs	r0, #32
  8003214:	f7fd faf4 	bl	8000800 <pvPortMalloc>
  8003218:	60b8      	str	r0, [r7, #8]
-	if (new_node == NULL) return;
+	if (new_node == NULL) { return; }
  800321a:	68bb      	ldr	r3, [r7, #8]
  800321c:	2b00      	cmp	r3, #0
  800321e:	d03b      	beq.n	8003298 <insert_node+0x98>
-
 	new_node->task = task;
  8003220:	68bb      	ldr	r3, [r7, #8]
  8003222:	461d      	mov	r5, r3
@@ -9188,13 +9187,15 @@ void insert_node(dd_task_list **head, dd_task task)
  8003244:	68ba      	ldr	r2, [r7, #8]
  8003246:	601a      	str	r2, [r3, #0]
  8003248:	e027      	b.n	800329a <insert_node+0x9a>
-	if (task.absolute_deadline < (*head)->task.absolute_deadline) {
+	// insert at front if earlier deadline  ,EDF priority basically
+	if (task.absolute_deadline < (*head)->task.absolute_deadline)
  800324a:	6bba      	ldr	r2, [r7, #56]	; 0x38
  800324c:	687b      	ldr	r3, [r7, #4]
  800324e:	681b      	ldr	r3, [r3, #0]
  8003250:	695b      	ldr	r3, [r3, #20]
  8003252:	429a      	cmp	r2, r3
  8003254:	d207      	bcs.n	8003266 <insert_node+0x66>
+	{
 		new_node->next = *head;
  8003256:	687b      	ldr	r3, [r7, #4]
  8003258:	681a      	ldr	r2, [r3, #0]
@@ -9212,6 +9213,7 @@ void insert_node(dd_task_list **head, dd_task task)
  8003266:	687b      	ldr	r3, [r7, #4]
  8003268:	681b      	ldr	r3, [r3, #0]
  800326a:	60fb      	str	r3, [r7, #12]
+	// looping till correct spot  keeping list sorted by deadline
 	while (curr->next != NULL &&
  800326c:	e002      	b.n	8003274 <insert_node+0x74>
 		   curr->next->task.absolute_deadline <= task.absolute_deadline)
@@ -9243,7 +9245,7 @@ void insert_node(dd_task_list **head, dd_task task)
  8003292:	68ba      	ldr	r2, [r7, #8]
  8003294:	61da      	str	r2, [r3, #28]
  8003296:	e000      	b.n	800329a <insert_node+0x9a>
-	if (new_node == NULL) return;
+	if (new_node == NULL) { return; }
  8003298:	bf00      	nop
 }
  800329a:	3710      	adds	r7, #16
@@ -9271,14 +9273,15 @@ dd_task_list *remove_node(dd_task_list **head, uint32_t instance_id)
  80032b6:	d101      	bne.n	80032bc <remove_node+0x16>
  80032b8:	2300      	movs	r3, #0
  80032ba:	e031      	b.n	8003320 <remove_node+0x7a>
-
-	if ((*head)->task.instance_id == instance_id) {
+	// special case: removing head node  gotta update head pointer
+	if ((*head)->task.instance_id == instance_id)
  80032bc:	687b      	ldr	r3, [r7, #4]
  80032be:	681b      	ldr	r3, [r3, #0]
  80032c0:	68da      	ldr	r2, [r3, #12]
  80032c2:	683b      	ldr	r3, [r7, #0]
  80032c4:	429a      	cmp	r2, r3
  80032c6:	d10c      	bne.n	80032e2 <remove_node+0x3c>
+	{
 		dd_task_list *r = *head;
  80032c8:	687b      	ldr	r3, [r7, #4]
  80032ca:	681b      	ldr	r3, [r3, #0]
@@ -9309,12 +9312,14 @@ dd_task_list *remove_node(dd_task_list **head, uint32_t instance_id)
  80032ee:	613b      	str	r3, [r7, #16]
 	while (curr != NULL) {
  80032f0:	e012      	b.n	8003318 <remove_node+0x72>
-		if (curr->task.instance_id == instance_id) {
+		// traverse list to find matching instance id
+		if (curr->task.instance_id == instance_id)
  80032f2:	693b      	ldr	r3, [r7, #16]
  80032f4:	68da      	ldr	r2, [r3, #12]
  80032f6:	683b      	ldr	r3, [r7, #0]
  80032f8:	429a      	cmp	r2, r3
  80032fa:	d108      	bne.n	800330e <remove_node+0x68>
+		{
 			prev->next = curr->next;
  80032fc:	693b      	ldr	r3, [r7, #16]
  80032fe:	69da      	ldr	r2, [r3, #28]
@@ -9393,7 +9398,8 @@ TickType_t get_next_timeout(void)
  800335e:	b082      	sub	sp, #8
  8003360:	af00      	add	r7, sp, #0
 	TickType_t now, dl;
-	if (active_list == NULL) return portMAX_DELAY;
+	// no tasks rn so scheduler can chill (wait forever)
+	if (active_list == NULL) { return portMAX_DELAY; }
  8003362:	4b0d      	ldr	r3, [pc, #52]	; (8003398 <get_next_timeout+0x3c>)
  8003364:	681b      	ldr	r3, [r3, #0]
  8003366:	2b00      	cmp	r3, #0
@@ -9408,7 +9414,8 @@ TickType_t get_next_timeout(void)
  8003378:	681b      	ldr	r3, [r3, #0]
  800337a:	695b      	ldr	r3, [r3, #20]
  800337c:	603b      	str	r3, [r7, #0]
-	if (dl <= now) return 0;
+	// deadline already passed so timeout immediately
+	if (dl <= now) { return 0; }
  800337e:	683a      	ldr	r2, [r7, #0]
  8003380:	687b      	ldr	r3, [r7, #4]
  8003382:	429a      	cmp	r2, r3
@@ -9441,6 +9448,7 @@ void adjust_priorities(void)
  80033a6:	607b      	str	r3, [r7, #4]
 	while (curr != NULL) {
  80033a8:	e00f      	b.n	80033ca <adjust_priorities+0x2e>
+		// updating priority dynamically based on EDF
 		vTaskPrioritySet(curr->task.t_handle,
  80033aa:	687b      	ldr	r3, [r7, #4]
  80033ac:	6818      	ldr	r0, [r3, #0]
@@ -9490,6 +9498,7 @@ void handle_release(dds_message *msg)
  80033ea:	687b      	ldr	r3, [r7, #4]
  80033ec:	68fa      	ldr	r2, [r7, #12]
  80033ee:	615a      	str	r2, [r3, #20]
+	// converting relative dl -> absolute dl
 	msg->task.absolute_deadline = (uint32_t)(now + (TickType_t)msg->task.absolute_deadline);
  80033f0:	687b      	ldr	r3, [r7, #4]
  80033f2:	699a      	ldr	r2, [r3, #24]
@@ -9497,7 +9506,7 @@ void handle_release(dds_message *msg)
  80033f6:	441a      	add	r2, r3
  80033f8:	687b      	ldr	r3, [r7, #4]
  80033fa:	619a      	str	r2, [r3, #24]
-	insert_node(&active_list, msg->task);
+	insert_node(&active_list, msg->task); // add to active  list sorted by deadline
  80033fc:	687c      	ldr	r4, [r7, #4]
  80033fe:	466d      	mov	r5, sp
  8003400:	f104 0310 	add.w	r3, r4, #16
@@ -9544,6 +9553,7 @@ void handle_complete(dds_message *msg)
  800344e:	b084      	sub	sp, #16
  8003450:	af00      	add	r7, sp, #0
  8003452:	6078      	str	r0, [r7, #4]
+	// take task out of active list when done
 	dd_task_list *node = remove_node(&active_list, msg->task.instance_id);
  8003454:	687b      	ldr	r3, [r7, #4]
  8003456:	691b      	ldr	r3, [r3, #16]
@@ -9551,10 +9561,11 @@ void handle_complete(dds_message *msg)
  800345a:	4819      	ldr	r0, [pc, #100]	; (80034c0 <handle_complete+0x74>)
  800345c:	f7ff ff23 	bl	80032a6 <remove_node>
  8003460:	60f8      	str	r0, [r7, #12]
-	if (node != NULL) {
+	if (node != NULL)
  8003462:	68fb      	ldr	r3, [r7, #12]
  8003464:	2b00      	cmp	r3, #0
  8003466:	d024      	beq.n	80034b2 <handle_complete+0x66>
+	{
 		node->task.completion_time = xTaskGetTickCount();
  8003468:	f7fe fc46 	bl	8001cf8 <xTaskGetTickCount>
  800346c:	4602      	mov	r2, r0
@@ -9566,7 +9577,7 @@ void handle_complete(dds_message *msg)
  8003476:	2101      	movs	r1, #1
  8003478:	4618      	mov	r0, r3
  800347a:	f7fe fa99 	bl	80019b0 <vTaskPrioritySet>
-		node->next = completed_list;
+		node->next = completed_list; // push to completed list, not sorted btw just stack
  800347e:	4b11      	ldr	r3, [pc, #68]	; (80034c4 <handle_complete+0x78>)
  8003480:	681a      	ldr	r2, [r3, #0]
  8003482:	68fb      	ldr	r3, [r7, #12]
@@ -9621,12 +9632,12 @@ void handle_deadline_miss(void)
  80034d2:	b083      	sub	sp, #12
  80034d4:	af00      	add	r7, sp, #0
 	dd_task_list *missed;
-	if (active_list == NULL) return;
+	if (active_list == NULL) { return; }
  80034d6:	4b1a      	ldr	r3, [pc, #104]	; (8003540 <handle_deadline_miss+0x70>)
  80034d8:	681b      	ldr	r3, [r3, #0]
  80034da:	2b00      	cmp	r3, #0
  80034dc:	d02c      	beq.n	8003538 <handle_deadline_miss+0x68>
-	missed = active_list;
+	missed = active_list; // take the earliest deadline task head as missed
  80034de:	4b18      	ldr	r3, [pc, #96]	; (8003540 <handle_deadline_miss+0x70>)
  80034e0:	681b      	ldr	r3, [r3, #0]
  80034e2:	607b      	str	r3, [r7, #4]
@@ -9651,7 +9662,7 @@ void handle_deadline_miss(void)
  8003502:	681a      	ldr	r2, [r3, #0]
  8003504:	687b      	ldr	r3, [r7, #4]
  8003506:	61da      	str	r2, [r3, #28]
-	overdue_list = missed;
+	overdue_list = missed; // move it to overdue list
  8003508:	4a0e      	ldr	r2, [pc, #56]	; (8003544 <handle_deadline_miss+0x74>)
  800350a:	687b      	ldr	r3, [r7, #4]
  800350c:	6013      	str	r3, [r2, #0]
@@ -9675,7 +9686,7 @@ void handle_deadline_miss(void)
  8003530:	4806      	ldr	r0, [pc, #24]	; (800354c <handle_deadline_miss+0x7c>)
  8003532:	f7ff fde3 	bl	80030fc <sem_printf>
  8003536:	e000      	b.n	800353a <handle_deadline_miss+0x6a>
-	if (active_list == NULL) return;
+	if (active_list == NULL) { return; }
  8003538:	bf00      	nop
 }
  800353a:	370c      	adds	r7, #12
@@ -9703,6 +9714,8 @@ void DD_Scheduler_Task(void *pv)
 		TickType_t timeout = get_next_timeout();
  8003558:	f7ff ff00 	bl	800335c <get_next_timeout>
  800355c:	63f8      	str	r0, [r7, #60]	; 0x3c
+		// wait for msg OR timeout
+		// timeout = possible deadline miss
 		BaseType_t received = xQueueReceive(dds_queue, &msg, timeout);
  800355e:	4b2a      	ldr	r3, [pc, #168]	; (8003608 <DD_Scheduler_Task+0xb8>)
  8003560:	6818      	ldr	r0, [r3, #0]
@@ -9712,10 +9725,11 @@ void DD_Scheduler_Task(void *pv)
  800356a:	f7fd fdaf 	bl	80010cc <xQueueGenericReceive>
  800356e:	63b8      	str	r0, [r7, #56]	; 0x38
 
-		if (received == pdTRUE) {
+		if (received == pdTRUE)
  8003570:	6bbb      	ldr	r3, [r7, #56]	; 0x38
  8003572:	2b01      	cmp	r3, #1
  8003574:	d143      	bne.n	80035fe <DD_Scheduler_Task+0xae>
+		{
 			switch (msg.msg_type) {
  8003576:	697b      	ldr	r3, [r7, #20]
  8003578:	3b01      	subs	r3, #1
@@ -9788,7 +9802,7 @@ void DD_Scheduler_Task(void *pv)
 				}
 				default: break;
 			}
-		} else { handle_deadline_miss(); }
+		} else { handle_deadline_miss(); } // no msg = deadline missed  kinda clever tbh
  80035fe:	f7ff ff67 	bl	80034d0 <handle_deadline_miss>
  8003602:	e7a9      	b.n	8003558 <DD_Scheduler_Task+0x8>
 				default: break;
@@ -9816,7 +9830,7 @@ uint32_t release_dd_task(TaskHandle_t h, task_type t, uint32_t id,
  8003624:	460b      	mov	r3, r1
  8003626:	72fb      	strb	r3, [r7, #11]
 	dds_message msg;
-	uint32_t iid = next_instance_id++;
+	uint32_t iid = next_instance_id++; // unique id for each task instance, auto increment
  8003628:	4b12      	ldr	r3, [pc, #72]	; (8003674 <release_dd_task+0x5c>)
  800362a:	681b      	ldr	r3, [r3, #0]
  800362c:	1c5a      	adds	r2, r3, #1
@@ -9850,6 +9864,7 @@ uint32_t release_dd_task(TaskHandle_t h, task_type t, uint32_t id,
 	msg.reply_queue = NULL;
  8003654:	2300      	movs	r3, #0
  8003656:	633b      	str	r3, [r7, #48]	; 0x30
+	// send msg to scheduler, blocking if needed
 	xQueueSend(dds_queue, &msg, portMAX_DELAY);
  8003658:	4b07      	ldr	r3, [pc, #28]	; (8003678 <release_dd_task+0x60>)
  800365a:	6818      	ldr	r0, [r3, #0]
@@ -9911,6 +9926,7 @@ dd_task_list *get_active_dd_task_list(void)
  80036b0:	b580      	push	{r7, lr}
  80036b2:	b08c      	sub	sp, #48	; 0x30
  80036b4:	af00      	add	r7, sp, #0
+	// temp queue for reply
 	QueueHandle_t rq = xQueueCreate(1, sizeof(dds_reply));
  80036b6:	2200      	movs	r2, #0
  80036b8:	2104      	movs	r1, #4
@@ -9977,7 +9993,7 @@ dd_task_list *get_completed_dd_task_list(void)
  8003722:	2300      	movs	r3, #0
  8003724:	f04f 32ff 	mov.w	r2, #4294967295
  8003728:	f7fd fb42 	bl	8000db0 <xQueueGenericSend>
-	xQueueReceive(rq, &reply, portMAX_DELAY);
+	xQueueReceive(rq, &reply, portMAX_DELAY); // wait for scheduler response
  800372c:	1d39      	adds	r1, r7, #4
  800372e:	2300      	movs	r3, #0
  8003730:	f04f 32ff 	mov.w	r2, #4294967295
@@ -10045,7 +10061,7 @@ dd_task_list *get_overdue_dd_task_list(void)
 
 080037a0 <Monitor_Task>:
 
-// runs periodically and prints stats (active/completed/overdue)
+// runs periodically and prints stats, active/completed/overdue
 void Monitor_Task(void *pv)
 {
  80037a0:	b580      	push	{r7, lr}
@@ -10056,11 +10072,11 @@ void Monitor_Task(void *pv)
  80037a8:	f7fe faa6 	bl	8001cf8 <xTaskGetTickCount>
  80037ac:	4603      	mov	r3, r0
  80037ae:	60fb      	str	r3, [r7, #12]
-	uint32_t an, cn, on;
 	dd_task_list *a_list, *c_list, *o_list;
 	(void)pv;
 
 	for (;;) {
+		// periodic monitor every ~1.5 sec
 		vTaskDelayUntil(&last, pdMS_TO_TICKS(1500));
  80037b0:	f107 030c 	add.w	r3, r7, #12
  80037b4:	f240 51dc 	movw	r1, #1500	; 0x5dc
@@ -10121,9 +10137,11 @@ void User_Defined_Task_1(void *pv)
  800380c:	2300      	movs	r3, #0
  800380e:	f04f 32ff 	mov.w	r2, #4294967295
  8003812:	f7fd fc5b 	bl	80010cc <xQueueGenericReceive>
+		// wait until generator releases this task
 		busy_wait_ms(T1_EXEC_MS);
- 8003816:	205f      	movs	r0, #95	; 0x5f
+ 8003816:	2064      	movs	r0, #100	; 0x64
  8003818:	f7ff fcb8 	bl	800318c <busy_wait_ms>
+		// simulate execution time
 		complete_dd_task(iid);
  800381c:	68fb      	ldr	r3, [r7, #12]
  800381e:	4618      	mov	r0, r3
@@ -10154,7 +10172,7 @@ void User_Defined_Task_2(void *pv)
  800383e:	f04f 32ff 	mov.w	r2, #4294967295
  8003842:	f7fd fc43 	bl	80010cc <xQueueGenericReceive>
 		busy_wait_ms(T2_EXEC_MS);
- 8003846:	2096      	movs	r0, #150	; 0x96
+ 8003846:	20c8      	movs	r0, #200	; 0xc8
  8003848:	f7ff fca0 	bl	800318c <busy_wait_ms>
 		complete_dd_task(iid);
  800384c:	68fb      	ldr	r3, [r7, #12]
@@ -10186,7 +10204,7 @@ void User_Defined_Task_3(void *pv)
  800386e:	f04f 32ff 	mov.w	r2, #4294967295
  8003872:	f7fd fc2b 	bl	80010cc <xQueueGenericReceive>
 		busy_wait_ms(T3_EXEC_MS);
- 8003876:	20fa      	movs	r0, #250	; 0xfa
+ 8003876:	20c8      	movs	r0, #200	; 0xc8
  8003878:	f7ff fc88 	bl	800318c <busy_wait_ms>
 		complete_dd_task(iid);
  800387c:	68fb      	ldr	r3, [r7, #12]
@@ -10311,7 +10329,7 @@ static TickType_t get_period_ticks(uint32_t id)
  8003930:	f44f 73fa 	mov.w	r3, #500	; 0x1f4
  8003934:	e003      	b.n	800393e <get_period_ticks+0x2a>
 		case 3u: return pdMS_TO_TICKS(T3_PERIOD_MS);
- 8003936:	f240 23ee 	movw	r3, #750	; 0x2ee
+ 8003936:	f44f 73fa 	mov.w	r3, #500	; 0x1f4
  800393a:	e000      	b.n	800393e <get_period_ticks+0x2a>
 		default: return 0;
  800393c:	2300      	movs	r3, #0
@@ -10337,7 +10355,7 @@ static TickType_t get_next_release_min(void)
  8003952:	4b0d      	ldr	r3, [pc, #52]	; (8003988 <get_next_release_min+0x3c>)
  8003954:	681b      	ldr	r3, [r3, #0]
  8003956:	607b      	str	r3, [r7, #4]
-	if (t2_next_release_tick < n) n = t2_next_release_tick;
+	if (t2_next_release_tick < n) { n = t2_next_release_tick; }
  8003958:	4b0c      	ldr	r3, [pc, #48]	; (800398c <get_next_release_min+0x40>)
  800395a:	681a      	ldr	r2, [r3, #0]
  800395c:	687b      	ldr	r3, [r7, #4]
@@ -10346,7 +10364,7 @@ static TickType_t get_next_release_min(void)
  8003962:	4b0a      	ldr	r3, [pc, #40]	; (800398c <get_next_release_min+0x40>)
  8003964:	681b      	ldr	r3, [r3, #0]
  8003966:	607b      	str	r3, [r7, #4]
-	if (t3_next_release_tick < n) n = t3_next_release_tick;
+	if (t3_next_release_tick < n) { n = t3_next_release_tick; }
  8003968:	4b09      	ldr	r3, [pc, #36]	; (8003990 <get_next_release_min+0x44>)
  800396a:	681a      	ldr	r2, [r3, #0]
  800396c:	687b      	ldr	r3, [r7, #4]
@@ -10391,14 +10409,14 @@ static void release_one_task(uint32_t id, task_type type,
  80039ac:	68f8      	ldr	r0, [r7, #12]
  80039ae:	f7ff ff8f 	bl	80038d0 <get_task_handle_for>
  80039b2:	61b8      	str	r0, [r7, #24]
-	TickType_t relative_deadline = dl - rel;
+	TickType_t relative_deadline = dl - rel; // compute relative deadline from abs times
  80039b4:	683a      	ldr	r2, [r7, #0]
  80039b6:	687b      	ldr	r3, [r7, #4]
  80039b8:	1ad3      	subs	r3, r2, r3
  80039ba:	617b      	str	r3, [r7, #20]
 	uint32_t iid;
 
-	if (q == NULL || h == NULL) return;
+	if (q == NULL || h == NULL) { return; }
  80039bc:	69fb      	ldr	r3, [r7, #28]
  80039be:	2b00      	cmp	r3, #0
  80039c0:	d013      	beq.n	80039ea <release_one_task+0x56>
@@ -10421,7 +10439,7 @@ static void release_one_task(uint32_t id, task_type type,
  80039e2:	69f8      	ldr	r0, [r7, #28]
  80039e4:	f7fd f9e4 	bl	8000db0 <xQueueGenericSend>
  80039e8:	e000      	b.n	80039ec <release_one_task+0x58>
-	if (q == NULL || h == NULL) return;
+	if (q == NULL || h == NULL) { return; }
  80039ea:	bf00      	nop
 }
  80039ec:	3720      	adds	r7, #32
@@ -10441,9 +10459,9 @@ static void release_due_tasks(void)
 	TickType_t now = xTaskGetTickCount();
  80039fa:	f7fe f97d 	bl	8001cf8 <xTaskGetTickCount>
  80039fe:	6078      	str	r0, [r7, #4]
-
 	while (t1_next_release_tick <= now) {
  8003a00:	e019      	b.n	8003a36 <release_due_tasks+0x42>
+		// release tasks if we are behind schedule, catch up loop
 		release_one_task(1u, PERIODIC, t1_next_release_tick, t1_next_deadline_tick);
  8003a02:	4b31      	ldr	r3, [pc, #196]	; (8003ac8 <release_due_tasks+0xd4>)
  8003a04:	681a      	ldr	r2, [r3, #0]
@@ -10452,7 +10470,7 @@ static void release_due_tasks(void)
  8003a0a:	2100      	movs	r1, #0
  8003a0c:	2001      	movs	r0, #1
  8003a0e:	f7ff ffc1 	bl	8003994 <release_one_task>
-		t1_next_release_tick += get_period_ticks(1u);
+		t1_next_release_tick += get_period_ticks(1u); // move to next release time
  8003a12:	2001      	movs	r0, #1
  8003a14:	f7ff ff7e 	bl	8003914 <get_period_ticks>
  8003a18:	4602      	mov	r2, r0
@@ -10585,6 +10603,7 @@ static void arm_release_timer(void)
  8003b00:	e000      	b.n	8003b04 <arm_release_timer+0x24>
  8003b02:	2301      	movs	r3, #1
  8003b04:	607b      	str	r3, [r7, #4]
+	// if already passed just trigger ASAP (1 tick)
 	xTimerChangePeriod(release_timer, delay, 0);
  8003b06:	4b06      	ldr	r3, [pc, #24]	; (8003b20 <arm_release_timer+0x40>)
  8003b08:	6818      	ldr	r0, [r3, #0]
@@ -10603,7 +10622,7 @@ static void arm_release_timer(void)
 
 08003b24 <release_timer_cb>:
 
-// timer callback just sends token to generator task
+// timer callback just sends it to generator task
 // cant do heavy work here so just notify
 static void release_timer_cb(TimerHandle_t xTimer)
 {
@@ -10611,10 +10630,11 @@ static void release_timer_cb(TimerHandle_t xTimer)
  8003b26:	b084      	sub	sp, #16
  8003b28:	af00      	add	r7, sp, #0
  8003b2a:	6078      	str	r0, [r7, #4]
-	uint32_t tok = GENERATOR_TOKEN;
+	uint32_t tok = GENERATOR_WAKE_UP;
  8003b2c:	2301      	movs	r3, #1
  8003b2e:	60fb      	str	r3, [r7, #12]
 	(void)xTimer;
+	// notify generator task (no blocking here)
 	xQueueSend(generator_queue, &tok, 0);
  8003b30:	4b05      	ldr	r3, [pc, #20]	; (8003b48 <release_timer_cb+0x24>)
  8003b32:	6818      	ldr	r0, [r3, #0]
@@ -10643,6 +10663,7 @@ void DD_Generator_Task(void *pv)
 	uint32_t tok;
 	(void)pv;
 
+	// queue to send release signals to task1
 	task1_release_queue = xQueueCreate(4, sizeof(uint32_t));
  8003b54:	2200      	movs	r2, #0
  8003b56:	2104      	movs	r1, #4
@@ -10668,6 +10689,7 @@ void DD_Generator_Task(void *pv)
  8003b80:	4b2f      	ldr	r3, [pc, #188]	; (8003c40 <DD_Generator_Task+0xf4>)
  8003b82:	601a      	str	r2, [r3, #0]
 
+	// creating user task 1
 	xTaskCreate(User_Defined_Task_1, "T1", configMINIMAL_STACK_SIZE + 128,
  8003b84:	4b2f      	ldr	r3, [pc, #188]	; (8003c44 <DD_Generator_Task+0xf8>)
  8003b86:	9301      	str	r3, [sp, #4]
@@ -10729,7 +10751,7 @@ void DD_Generator_Task(void *pv)
  8003bf0:	6013      	str	r3, [r2, #0]
 	t3_next_deadline_tick = t0 + pdMS_TO_TICKS(T3_PERIOD_MS);
  8003bf2:	68fb      	ldr	r3, [r7, #12]
- 8003bf4:	f203 23ee 	addw	r3, r3, #750	; 0x2ee
+ 8003bf4:	f503 73fa 	add.w	r3, r3, #500	; 0x1f4
  8003bf8:	4a20      	ldr	r2, [pc, #128]	; (8003c7c <DD_Generator_Task+0x130>)
  8003bfa:	6013      	str	r3, [r2, #0]
 
@@ -10745,8 +10767,7 @@ void DD_Generator_Task(void *pv)
  8003c0e:	4b1e      	ldr	r3, [pc, #120]	; (8003c88 <DD_Generator_Task+0x13c>)
  8003c10:	601a      	str	r2, [r3, #0]
 								 pdFALSE, (void *)0, release_timer_cb);
-
-	release_due_tasks();
+	release_due_tasks(); // release tasks at startup, so we dont wait first timer
  8003c12:	f7ff feef 	bl	80039f4 <release_due_tasks>
 	arm_release_timer();
  8003c16:	f7ff ff63 	bl	8003ae0 <arm_release_timer>
@@ -10792,7 +10813,7 @@ void DD_Generator_Task(void *pv)
 08003c90 <main>:
 }
 
-// sets everything up (queues, tasks, scheduler)
+// sets everything up like queues, tasks, scheduler
 // then starts RTOS scheduler
 int main(void)
 {
@@ -10801,7 +10822,7 @@ int main(void)
  8003c94:	af02      	add	r7, sp, #8
 	dwt_init();
  8003c96:	f7ff fa5d 	bl	8003154 <dwt_init>
-
+	// main queue for scheduler comms
 	dds_queue = xQueueCreate(16, sizeof(dds_message));
  8003c9a:	2200      	movs	r2, #0
  8003c9c:	2124      	movs	r1, #36	; 0x24
@@ -10825,7 +10846,7 @@ int main(void)
  8003cc2:	4b13      	ldr	r3, [pc, #76]	; (8003d10 <main+0x80>)
  8003cc4:	601a      	str	r2, [r3, #0]
 
-	xTaskCreate(DD_Scheduler_Task, "DDS", configMINIMAL_STACK_SIZE,
+	xTaskCreate(DD_Scheduler_Task, "DDS", configMINIMAL_STACK_SIZE, NULL, PRIORITY_DDS, NULL);
  8003cc6:	2300      	movs	r3, #0
  8003cc8:	9301      	str	r3, [sp, #4]
  8003cca:	2305      	movs	r3, #5
@@ -10835,8 +10856,7 @@ int main(void)
  8003cd2:	4910      	ldr	r1, [pc, #64]	; (8003d14 <main+0x84>)
  8003cd4:	4810      	ldr	r0, [pc, #64]	; (8003d18 <main+0x88>)
  8003cd6:	f7fd fcbf 	bl	8001658 <xTaskCreate>
-				NULL, PRIORITY_DDS, NULL);
-	xTaskCreate(Monitor_Task, "Mon", configMINIMAL_STACK_SIZE,
+	xTaskCreate(Monitor_Task, "Mon", configMINIMAL_STACK_SIZE, NULL, PRIORITY_MONITOR, NULL);
  8003cda:	2300      	movs	r3, #0
  8003cdc:	9301      	str	r3, [sp, #4]
  8003cde:	2304      	movs	r3, #4
@@ -10846,8 +10866,7 @@ int main(void)
  8003ce6:	490d      	ldr	r1, [pc, #52]	; (8003d1c <main+0x8c>)
  8003ce8:	480d      	ldr	r0, [pc, #52]	; (8003d20 <main+0x90>)
  8003cea:	f7fd fcb5 	bl	8001658 <xTaskCreate>
-				NULL, PRIORITY_MONITOR, NULL);
-	xTaskCreate(DD_Generator_Task, "Gen", configMINIMAL_STACK_SIZE,
+	xTaskCreate(DD_Generator_Task, "Gen", configMINIMAL_STACK_SIZE, NULL, PRIORITY_GENERATOR, NULL);
  8003cee:	2300      	movs	r3, #0
  8003cf0:	9301      	str	r3, [sp, #4]
  8003cf2:	2303      	movs	r3, #3
@@ -10857,8 +10876,7 @@ int main(void)
  8003cfa:	490a      	ldr	r1, [pc, #40]	; (8003d24 <main+0x94>)
  8003cfc:	480a      	ldr	r0, [pc, #40]	; (8003d28 <main+0x98>)
  8003cfe:	f7fd fcab 	bl	8001658 <xTaskCreate>
-				NULL, PRIORITY_GENERATOR, NULL);
-
+	// start RTOS  after this no coming back
 	vTaskStartScheduler();
  8003d02:	f7fd ff03 	bl	8001b0c <vTaskStartScheduler>
 	while (1) {}
@@ -10875,36 +10893,63 @@ int main(void)
 
 08003d2c <vApplicationMallocFailedHook>:
 }
-// called if malloc fails  just stuck in loop (bad but ok for debug)
-void vApplicationMallocFailedHook(void)										{ for (;;); }
+
+void vApplicationMallocFailedHook( void )
+{
  8003d2c:	b480      	push	{r7}
  8003d2e:	af00      	add	r7, sp, #0
+	// Called if a call to pvPortMalloc() fails because there is insufficient
+	// free memory available in the FreeRTOS heap.  pvPortMalloc() is called
+	// internally by FreeRTOS API functions that create tasks, queues, software
+	// timers, and semaphores.  The size of the FreeRTOS heap is set by the
+	// configTOTAL_HEAP_SIZE configuration constant in FreeRTOSConfig.h.
+	for( ;; );
  8003d30:	e7fe      	b.n	8003d30 <vApplicationMallocFailedHook+0x4>
 
 08003d32 <vApplicationStackOverflowHook>:
+}
 
-// called if stack overflow happens
-// again just infinite loop so we notice crash
-void vApplicationStackOverflowHook(xTaskHandle t, signed char *n)			{ (void)t; (void)n; for (;;); }
+void vApplicationStackOverflowHook( xTaskHandle pxTask, signed char *pcTaskName )
+{
  8003d32:	b480      	push	{r7}
  8003d34:	b083      	sub	sp, #12
  8003d36:	af00      	add	r7, sp, #0
  8003d38:	6078      	str	r0, [r7, #4]
  8003d3a:	6039      	str	r1, [r7, #0]
+	( void ) pxTask;
+	// Run time stack overflow checking is performed if configconfigCHECK_FOR_STACK_OVERFLOW is
+	// defined to 1 or 2.  This hook
+	// function is called if a stack overflow is detected.  pxCurrentTCB can be
+	// inspected in the debugger if the task name passed into this function is corrupt.
+	for( ;; );
  8003d3c:	e7fe      	b.n	8003d3c <vApplicationStackOverflowHook+0xa>
 
 08003d3e <vApplicationIdleHook>:
+}
 
-// runs when idle  just checking free heap for debug
-// not doing much honestly
-void vApplicationIdleHook(void) { volatile size_t s = xPortGetFreeHeapSize(); (void)s; }
+void vApplicationIdleHook( void )
+{
  8003d3e:	b580      	push	{r7, lr}
  8003d40:	b082      	sub	sp, #8
  8003d42:	af00      	add	r7, sp, #0
+
+	// The idle task hook is enabled by setting configUSE_IDLE_HOOK to 1 in FreeRTOSConfig.h.
+	//
+	// This function is called on each cycle of the idle task.  In this case it
+	// does nothing useful, other than report the amount of FreeRTOS heap that  remains unallocated.
+	xFreeStackSpace = xPortGetFreeHeapSize();
  8003d44:	f7fc fe7a 	bl	8000a3c <xPortGetFreeHeapSize>
  8003d48:	4603      	mov	r3, r0
  8003d4a:	607b      	str	r3, [r7, #4]
+
+	if( xFreeStackSpace > 100 )
  8003d4c:	687b      	ldr	r3, [r7, #4]
+	{
+		//	By now, the kernel has allocated everything it is going to, so
+		//	if there is a lot of heap remaining unallocated then
+		// the value of configTOTAL_HEAP_SIZE in FreeRTOSConfig.h can be reduced accordingly.
+	}
+}
  8003d4e:	bf00      	nop
  8003d50:	3708      	adds	r7, #8
  8003d52:	46bd      	mov	sp, r7

@@ -3249,7 +3249,7 @@ LOAD c:/program files (x86)/atollic/truestudio for stm32 9.1.0/armtools/bin/../l
                 0x000008b0       0x22 c:/program files (x86)/atollic/truestudio for stm32 9.1.0/armtools/bin/../lib/gcc/arm-atollic-eabi/6.3.1/armv7e-m/softfp/crtn.o
 OUTPUT(STM32F4_Discovery_FreeRTOS_Simple_Demo.elf elf32-littlearm)
 
-.debug_info     0x00000000     0xc51f
+.debug_info     0x00000000     0xc526
  .debug_info    0x00000000      0xac3 FreeRTOS_Source\list.o
  .debug_info    0x00000ac3      0x50b FreeRTOS_Source\portable\GCC\ARM_CM4F\port.o
  .debug_info    0x00000fce      0xc03 FreeRTOS_Source\portable\MemMang\heap_4.o
@@ -3261,13 +3261,13 @@ OUTPUT(STM32F4_Discovery_FreeRTOS_Simple_Demo.elf elf32-littlearm)
  .debug_info    0x00007aa5      0xb1a Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_spi.o
  .debug_info    0x000085bf     0x108b Utilities\STM32F4-Discovery\stm32f4_discovery_audio_codec.o
  .debug_info    0x0000964a      0x12d src\STM32F4-Discovery_callback.o
- .debug_info    0x00009777     0x1467 src\main.o
- .debug_info    0x0000abde       0x6e src\startup_stm32f4xx.o
- .debug_info    0x0000ac4c      0x121 src\stm32f4xx_it.o
- .debug_info    0x0000ad6d     0x11e2 src\syscalls.o
- .debug_info    0x0000bf4f      0x5d0 src\system_stm32f4xx.o
+ .debug_info    0x00009777     0x146e src\main.o
+ .debug_info    0x0000abe5       0x6e src\startup_stm32f4xx.o
+ .debug_info    0x0000ac53      0x121 src\stm32f4xx_it.o
+ .debug_info    0x0000ad74     0x11e2 src\syscalls.o
+ .debug_info    0x0000bf56      0x5d0 src\system_stm32f4xx.o
 
-.debug_abbrev   0x00000000     0x1eb6
+.debug_abbrev   0x00000000     0x1e9a
  .debug_abbrev  0x00000000      0x1c5 FreeRTOS_Source\list.o
  .debug_abbrev  0x000001c5      0x1d5 FreeRTOS_Source\portable\GCC\ARM_CM4F\port.o
  .debug_abbrev  0x0000039a      0x2b7 FreeRTOS_Source\portable\MemMang\heap_4.o
@@ -3279,11 +3279,11 @@ OUTPUT(STM32F4_Discovery_FreeRTOS_Simple_Demo.elf elf32-littlearm)
  .debug_abbrev  0x00001208      0x17a Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_spi.o
  .debug_abbrev  0x00001382      0x276 Utilities\STM32F4-Discovery\stm32f4_discovery_audio_codec.o
  .debug_abbrev  0x000015f8       0xa3 src\STM32F4-Discovery_callback.o
- .debug_abbrev  0x0000169b      0x360 src\main.o
- .debug_abbrev  0x000019fb       0x12 src\startup_stm32f4xx.o
- .debug_abbrev  0x00001a0d       0x78 src\stm32f4xx_it.o
- .debug_abbrev  0x00001a85      0x2d9 src\syscalls.o
- .debug_abbrev  0x00001d5e      0x158 src\system_stm32f4xx.o
+ .debug_abbrev  0x0000169b      0x344 src\main.o
+ .debug_abbrev  0x000019df       0x12 src\startup_stm32f4xx.o
+ .debug_abbrev  0x000019f1       0x78 src\stm32f4xx_it.o
+ .debug_abbrev  0x00001a69      0x2d9 src\syscalls.o
+ .debug_abbrev  0x00001d42      0x158 src\system_stm32f4xx.o
 
 .debug_aranges  0x00000000      0xa90
  .debug_aranges
@@ -3337,7 +3337,7 @@ OUTPUT(STM32F4_Discovery_FreeRTOS_Simple_Demo.elf elf32-littlearm)
  .debug_ranges  0x000008b8       0xc0 src\syscalls.o
  .debug_ranges  0x00000978       0x20 src\system_stm32f4xx.o
 
-.debug_line     0x00000000     0x4dff
+.debug_line     0x00000000     0x4e11
  .debug_line    0x00000000      0x31c FreeRTOS_Source\list.o
  .debug_line    0x0000031c      0x388 FreeRTOS_Source\portable\GCC\ARM_CM4F\port.o
  .debug_line    0x000006a4      0x3d3 FreeRTOS_Source\portable\MemMang\heap_4.o
@@ -3349,13 +3349,13 @@ OUTPUT(STM32F4_Discovery_FreeRTOS_Simple_Demo.elf elf32-littlearm)
  .debug_line    0x00003025      0x46e Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_spi.o
  .debug_line    0x00003493      0x70f Utilities\STM32F4-Discovery\stm32f4_discovery_audio_codec.o
  .debug_line    0x00003ba2      0x1c4 src\STM32F4-Discovery_callback.o
- .debug_line    0x00003d66      0x74f src\main.o
- .debug_line    0x000044b5       0x77 src\startup_stm32f4xx.o
- .debug_line    0x0000452c      0x1f4 src\stm32f4xx_it.o
- .debug_line    0x00004720      0x4c6 src\syscalls.o
- .debug_line    0x00004be6      0x219 src\system_stm32f4xx.o
+ .debug_line    0x00003d66      0x761 src\main.o
+ .debug_line    0x000044c7       0x77 src\startup_stm32f4xx.o
+ .debug_line    0x0000453e      0x1f4 src\stm32f4xx_it.o
+ .debug_line    0x00004732      0x4c6 src\syscalls.o
+ .debug_line    0x00004bf8      0x219 src\system_stm32f4xx.o
 
-.debug_str      0x00000000     0x3ef2
+.debug_str      0x00000000     0x3f03
  .debug_str     0x00000000      0x69e FreeRTOS_Source\list.o
                                 0x739 (size before relaxing)
  .debug_str     0x0000069e      0x26d FreeRTOS_Source\portable\GCC\ARM_CM4F\port.o
@@ -3364,27 +3364,27 @@ OUTPUT(STM32F4_Discovery_FreeRTOS_Simple_Demo.elf elf32-littlearm)
                                 0x820 (size before relaxing)
  .debug_str     0x00000b08      0x555 FreeRTOS_Source\queue.o
                                 0xc7f (size before relaxing)
- .debug_str     0x0000105d      0x9e0 FreeRTOS_Source\tasks.o
+ .debug_str     0x0000105d      0x9da FreeRTOS_Source\tasks.o
                                0x11ed (size before relaxing)
- .debug_str     0x00001a3d      0x41c FreeRTOS_Source\timers.o
+ .debug_str     0x00001a37      0x41c FreeRTOS_Source\timers.o
                                 0xb77 (size before relaxing)
- .debug_str     0x00001e59      0x2d7 Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_dac.o
+ .debug_str     0x00001e53      0x2d7 Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_dac.o
                                 0x4d2 (size before relaxing)
- .debug_str     0x00002130      0x37e Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_dma.o
+ .debug_str     0x0000212a      0x37e Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_dma.o
                                 0x5c1 (size before relaxing)
- .debug_str     0x000024ae      0x4a9 Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_spi.o
+ .debug_str     0x000024a8      0x4a9 Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_spi.o
                                 0x709 (size before relaxing)
- .debug_str     0x00002957      0xc27 Utilities\STM32F4-Discovery\stm32f4_discovery_audio_codec.o
+ .debug_str     0x00002951      0xc27 Utilities\STM32F4-Discovery\stm32f4_discovery_audio_codec.o
                                0x10e3 (size before relaxing)
- .debug_str     0x0000357e       0x84 src\STM32F4-Discovery_callback.o
+ .debug_str     0x00003578       0x84 src\STM32F4-Discovery_callback.o
                                 0x26d (size before relaxing)
- .debug_str     0x00003602      0x4c6 src\main.o
-                                0xbce (size before relaxing)
- .debug_str     0x00003ac8       0x7b src\stm32f4xx_it.o
+ .debug_str     0x000035fc      0x4dd src\main.o
+                                0xbf0 (size before relaxing)
+ .debug_str     0x00003ad9       0x7b src\stm32f4xx_it.o
                                 0x243 (size before relaxing)
- .debug_str     0x00003b43      0x2af src\syscalls.o
+ .debug_str     0x00003b54      0x2af src\syscalls.o
                                 0x985 (size before relaxing)
- .debug_str     0x00003df2      0x100 src\system_stm32f4xx.o
+ .debug_str     0x00003e03      0x100 src\system_stm32f4xx.o
                                 0x3fa (size before relaxing)
 
 .comment        0x00000000       0x7c
